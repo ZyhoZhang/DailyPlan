@@ -1,0 +1,23 @@
+name: Tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-and-web:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Native logic and cross-process storage
+        run: ./test_native.sh
+      - name: Web API
+        run: python3 test_app.py
+      - name: Storage regressions
+        run: python3 test_storage.py
+      - name: Compile native distribution
+        run: ./build_native.sh

@@ -1,0 +1,2 @@
+# Optional browser tests only. The web app has no runtime packages.
+websocket-client>=1.8,<2

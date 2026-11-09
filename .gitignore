@@ -1,0 +1,29 @@
+# Private runtime data
+/data/
+/logs/
+*.log
+# Local tools, secrets and signing material
+.claude/
+.codex/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+# Generated binaries belong in Releases
+/dist/
+/dist-native/
+*.app/
+*.dmg
+*.zip
+/build/
+/.build/
+# Local development
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store

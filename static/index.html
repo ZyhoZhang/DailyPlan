@@ -1,0 +1,994 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Plan</title>
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --muted: #6b7280;
+    --rule: #e2e5ea;
+    --accent: #1f3a93;
+    --accent-soft: #eef2fb;
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --done: #15803d;
+    --done-soft: #e9f7ee;
+    --pending: #b45309;
+    --pending-soft: #fdf6e7;
+    --unfinished: #b91c1c;
+    --unfinished-soft: #fdeceb;
+    --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.05);
+    --mono: "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 1.75rem 1.25rem 2rem;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  h1 { font-size: 1.55rem; margin: 0; letter-spacing: -.02em; }
+  h2 { font-size: 1.05rem; margin: 0 0 .85rem; letter-spacing: -.01em; }
+  h3 { font-size: .95rem; margin: 0 0 .5rem; color: var(--accent); }
+
+  .muted { color: var(--muted); }
+  .small { font-size: .87em; }
+  .num   { font-variant-numeric: tabular-nums; }
+
+  /* ---------- header ---------- */
+  header.top {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem;
+  }
+  .datenav { display: flex; align-items: center; gap: .4rem; }
+  .datenav input[type=date] {
+    font: inherit; padding: .3rem .5rem; border: 1px solid var(--rule);
+    border-radius: 6px; background: var(--card); color: var(--fg);
+  }
+
+  button {
+    font: inherit; cursor: pointer; border-radius: 6px;
+    border: 1px solid var(--rule); background: var(--card); color: var(--fg);
+    padding: .35rem .7rem; transition: background .12s, border-color .12s;
+  }
+  button:hover:not(:disabled) { background: var(--accent-soft); border-color: #c8d2ea; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary {
+    background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500;
+  }
+  button.primary:hover:not(:disabled) { background: #18306f; border-color: #18306f; }
+  button.ghost { border-color: transparent; background: transparent; color: var(--muted); padding: .2rem .4rem; }
+  button.ghost:hover:not(:disabled) { background: #eef0f4; color: var(--fg); }
+
+  /* ---------- layout ---------- */
+  .grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 1.1rem; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card); border: 1px solid var(--rule);
+    border-radius: 10px; padding: 1.05rem 1.15rem; box-shadow: var(--shadow);
+    margin-bottom: 1.1rem;
+  }
+
+  /* ---------- heroic panel ---------- */
+  .hero {
+    background: linear-gradient(135deg, #1f3a93 0%, #2d55c9 55%, #4570e0 100%);
+    color: #fff; border: none;
+  }
+  .hero h2 { color: #fff; opacity: .9; font-size: .8rem; text-transform: uppercase;
+             letter-spacing: .08em; margin-bottom: .7rem; font-weight: 600; }
+  .hero .rank { font-size: 1.45rem; font-weight: 600; letter-spacing: -.01em; }
+  .hero .rank .lvl { font-size: .78rem; opacity: .78; font-weight: 400; margin-left: .45rem; }
+
+  .bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,.24); margin: .6rem 0 .35rem; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: #fff; border-radius: 4px; transition: width .35s ease; }
+
+  .statrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-top: 1rem; }
+  .stat { background: rgba(255,255,255,.13); border-radius: 8px; padding: .55rem .5rem; text-align: center; }
+  .stat b { display: block; font-size: 1.35rem; font-weight: 600; line-height: 1.15; }
+  .stat span { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; opacity: .82; }
+
+  /* ---------- goals ---------- */
+  .addrow { display: flex; gap: .5rem; margin-bottom: .9rem; }
+  .addrow input[type=text] {
+    flex: 1; font: inherit; padding: .5rem .65rem;
+    border: 1px solid var(--rule); border-radius: 7px; background: #fff; color: var(--fg);
+  }
+  .addrow input[type=text]:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+  ul.goals { list-style: none; margin: 0; padding: 0; }
+  li.goal {
+    display: flex; align-items: flex-start; gap: .6rem;
+    padding: .6rem .1rem; border-top: 1px solid var(--rule);
+  }
+  li.goal:first-child { border-top: none; }
+
+  .cycle {
+    flex: none; width: 22px; height: 22px; border-radius: 6px; margin-top: .1rem;
+    display: grid; place-items: center; font-size: 12px; line-height: 1; padding: 0;
+    border: 1px solid var(--rule); background: #fff;
+  }
+  .goal.done      .cycle { background: var(--done-soft);       border-color: #b9e2c8; color: var(--done); }
+  .goal.pending   .cycle { background: var(--pending-soft);    border-color: #f0dcae; color: var(--pending); }
+  .goal.unfinished .cycle { background: var(--unfinished-soft); border-color: #f3c4c1; color: var(--unfinished); }
+
+  .goal .body { flex: 1; min-width: 0; }
+  .goal .title { word-break: break-word; }
+  .goal.done .title { text-decoration: line-through; color: var(--muted); }
+  .goal .note { font-size: .86em; color: var(--muted); white-space: pre-wrap; margin-top: .15rem; }
+  .goal .meta { font-size: .76em; color: var(--muted); margin-top: .15rem; }
+
+  .tag {
+    display: inline-block; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
+    padding: .08rem .38rem; border-radius: 4px; font-weight: 600; vertical-align: 1px;
+  }
+  .tag.done       { background: var(--done-soft); color: var(--done); }
+  .tag.pending    { background: var(--pending-soft); color: var(--pending); }
+  .tag.unfinished { background: var(--unfinished-soft); color: var(--unfinished); }
+
+  .goal .acts { flex: none; display: flex; gap: .1rem; opacity: 0; transition: opacity .12s; }
+  li.goal:hover .acts, li.goal:focus-within .acts { opacity: 1; }
+
+  .empty { color: var(--muted); font-size: .92em; padding: .9rem 0; text-align: center; }
+
+  /* inline editors — replaces blocking window.prompt()/confirm() */
+  .editor { margin-top: .4rem; }
+  .editor input, .editor textarea {
+    width: 100%; font: inherit; padding: .35rem .5rem;
+    border: 1px solid var(--accent); border-radius: 6px; background: #fff; color: var(--fg);
+  }
+  .editor textarea { min-height: 52px; resize: vertical; }
+  .editor .row { display: flex; gap: .4rem; margin-top: .35rem; align-items: center; }
+  .editor .hint { font-size: .78em; color: var(--muted); margin-left: auto; }
+  .editor button { padding: .25rem .6rem; font-size: .88em; }
+
+  .confirming { background: var(--unfinished-soft); border-radius: 6px; }
+
+  .progress-line { display: flex; align-items: center; gap: .6rem; margin-bottom: .8rem; }
+  .progress-line .track { flex: 1; height: 6px; background: #edeff3; border-radius: 4px; overflow: hidden; }
+  .progress-line .track > i { display: block; height: 100%; background: var(--done); transition: width .3s; }
+
+  /* ---------- deadlines ---------- */
+  ul.deadlines { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+
+  /* Each deadline is a card whose left edge and tint encode urgency. */
+  li.dl {
+    position: relative; display: flex; gap: .7rem; align-items: flex-start;
+    padding: .65rem .75rem .7rem 1rem; border: 1px solid var(--rule);
+    border-radius: 8px; background: #fcfcfd; overflow: hidden;
+  }
+  li.dl::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--muted);
+  }
+  li.dl .body { flex: 1; min-width: 0; }
+
+  /* The number is the headline, not an afterthought. */
+  li.dl .cd {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 25px; font-weight: 700; line-height: 1.05;
+    letter-spacing: -.03em; display: flex; align-items: baseline; gap: .1em;
+  }
+  li.dl .cd .u { font-size: .58em; font-weight: 500; opacity: .62; margin-right: .18em; }
+  li.dl .cd .secs { font-size: .62em; font-weight: 500; opacity: .55; margin-left: .1em; }
+
+  li.dl .name {
+    font-weight: 500; word-break: break-word; font-size: .95rem; margin-top: .12rem;
+  }
+  li.dl .when { font-size: .78rem; color: var(--muted); margin-top: .05rem; }
+
+  /* Leading "−" marks a countdown that has already run out. */
+  li.dl .sign { font-size: .8em; margin-right: .05em; }
+
+  li.dl.calm   { background: #fbfcfe; }
+  li.dl.calm::before   { background: #8fa3c8; }
+  li.dl.calm   .cd     { color: var(--accent); }
+
+  li.dl.soon   { background: var(--pending-soft); border-color: #f0dcae; }
+  li.dl.soon::before   { background: var(--pending); }
+  li.dl.soon   .cd     { color: var(--pending); }
+
+  li.dl.urgent { background: var(--unfinished-soft); border-color: #f3c4c1; }
+  li.dl.urgent::before { background: var(--unfinished); }
+  li.dl.urgent .cd     { color: var(--unfinished); }
+  li.dl.urgent .cd .live { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+  li.dl.passed { background: #f4f4f6; border-color: var(--rule); }
+  li.dl.passed::before { background: #9ca3af; }
+  li.dl.passed .cd     { color: #6b7280; font-size: 20px; }
+  li.dl.passed .name   { color: var(--muted); }
+
+  /* Urgency word next to the name: "overdue", "today", … */
+  li.dl .badge {
+    display: inline-block; font-size: .64rem; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; padding: .1rem .34rem; border-radius: 4px;
+    vertical-align: 2px; margin-left: .35rem;
+  }
+  li.dl.urgent .badge { background: var(--unfinished); color: #fff; }
+  li.dl.soon   .badge { background: var(--pending); color: #fff; }
+  li.dl.passed .badge { background: #9ca3af; color: #fff; }
+
+  li.dl .acts { opacity: 0; transition: opacity .12s; flex: none; }
+  li.dl:hover .acts, li.dl:focus-within .acts { opacity: 1; }
+
+  .dlform { display: grid; grid-template-columns: 1fr auto auto; gap: .4rem; margin-top: .8rem; }
+  .dlform input { font: inherit; padding: .4rem .55rem; border: 1px solid var(--rule); border-radius: 6px; background: #fff; color: var(--fg); min-width: 0; }
+  @media (max-width: 520px) { .dlform { grid-template-columns: 1fr; } }
+
+  /* ---------- reflection ---------- */
+  textarea {
+    width: 100%; font: inherit; padding: .55rem .65rem; border: 1px solid var(--rule);
+    border-radius: 7px; resize: vertical; min-height: 74px; background: #fff; color: var(--fg);
+  }
+  textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+  /* ---------- history ---------- */
+  table { width: 100%; border-collapse: collapse; font-size: .9em; }
+  th, td { border-bottom: 1px solid var(--rule); padding: .4rem .5rem; text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .82em; text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover td { background: var(--accent-soft); }
+
+  details.section > summary {
+    cursor: pointer; font-weight: 600; color: var(--accent); list-style: none;
+  }
+  details.section > summary::-webkit-details-marker { display: none; }
+  details.section > summary::before { content: "▸"; display: inline-block; margin-right: .45rem; transition: transform .15s; }
+  details.section[open] > summary::before { transform: rotate(90deg); }
+  details.section > .inner { margin-top: .9rem; }
+
+  /* ---------- toast ---------- */
+  #toast {
+    position: fixed; left: 50%; bottom: 1.4rem; transform: translateX(-50%) translateY(1rem);
+    background: #1a1a1a; color: #fff; padding: .5rem .9rem; border-radius: 7px;
+    font-size: .89rem; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+    max-width: 90vw; z-index: 50;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.err { background: #7f1d1d; }
+
+  kbd {
+    font-family: var(--mono); font-size: .78em; background: #eef0f4;
+    border: 1px solid var(--rule); border-bottom-width: 2px;
+    border-radius: 4px; padding: .05em .35em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Daily Plan</h1>
+      <div class="muted small" id="dayLabel">—</div>
+    </div>
+    <div class="datenav">
+      <button id="prevDay" title="Previous day">←</button>
+      <input type="date" id="datePicker">
+      <button id="nextDay" title="Next day">→</button>
+      <button id="todayBtn">Today</button>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ================= left column ================= -->
+    <div>
+      <section class="card">
+        <h2>Goals</h2>
+
+        <div class="addrow">
+          <input type="text" id="goalInput" placeholder="What do you want to get done? (Enter to add)" autocomplete="off">
+          <button class="primary" id="addGoal">Add</button>
+        </div>
+
+        <div class="progress-line">
+          <div class="track"><i id="dayBar" style="width:0%"></i></div>
+          <span class="small muted num" id="dayCount">0 / 0</span>
+        </div>
+
+        <ul class="goals" id="goalList"></ul>
+
+        <div style="margin-top:.9rem; display:flex; gap:.5rem; flex-wrap:wrap;">
+          <button id="carryBtn" class="small">Carry over unfinished from yesterday</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Reflection</h2>
+        <textarea id="reflection" placeholder="How did the day go? What got in the way?"></textarea>
+        <div class="small muted" style="margin-top:.4rem;" id="reflectionStatus">Saves automatically.</div>
+      </section>
+
+      <section class="card">
+        <details class="section" id="historySection">
+          <summary>History</summary>
+          <div class="inner">
+            <table>
+              <thead>
+                <tr><th>Date</th><th class="num">Score</th><th class="num">Goals</th><th class="num">Done</th></tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+            <p class="small muted" style="margin-bottom:0;">
+              Markdown logs are written to <code>logs/</code> on every change.
+            </p>
+          </div>
+        </details>
+      </section>
+    </div>
+
+    <!-- ================= right column ================= -->
+    <div>
+      <section class="card hero">
+        <h2>Heroic Panel</h2>
+        <div class="rank">
+          <span id="rankName">Novice</span><span class="lvl" id="rankLevel">Lv 1</span>
+        </div>
+        <div class="bar"><i id="rankBar" style="width:0%"></i></div>
+        <div class="small" style="opacity:.85;" id="rankNext">—</div>
+
+        <div class="statrow">
+          <div class="stat"><b class="num" id="sTotal">0</b><span>Total</span></div>
+          <div class="stat"><b class="num" id="sToday">0</b><span>Today</span></div>
+          <div class="stat"><b class="num" id="sStreak">0</b><span>Streak</span></div>
+          <div class="stat"><b class="num" id="sBest">0</b><span>Best day</span></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Countdowns</h2>
+        <ul class="deadlines" id="deadlineList"></ul>
+        <div class="dlform">
+          <input type="text" id="dlTitle" placeholder="Deadline name" autocomplete="off">
+          <input type="datetime-local" id="dlDue">
+          <button class="primary" id="addDeadline">Add</button>
+        </div>
+        <div class="small muted" style="margin-top:.45rem;">
+          Leave the time blank for a date and it defaults to 23:59.
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Shortcuts</h3>
+        <div class="small muted">
+          <kbd>Enter</kbd> add goal · <kbd>Click</kbd> the box to cycle
+          pending → done → unfinished · <kbd>←</kbd>/<kbd>→</kbd> buttons change day.
+        </div>
+      </section>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------- utilities
+const $ = (id) => document.getElementById(id);
+
+function todayISO() {
+  const d = new Date();
+  return [d.getFullYear(),
+          String(d.getMonth() + 1).padStart(2, "0"),
+          String(d.getDate()).padStart(2, "0")].join("-");
+}
+
+function shiftDay(iso, delta) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + delta);
+  return [dt.getFullYear(),
+          String(dt.getMonth() + 1).padStart(2, "0"),
+          String(dt.getDate()).padStart(2, "0")].join("-");
+}
+
+function prettyDay(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const label = dt.toLocaleDateString(undefined,
+    { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  if (iso === todayISO()) return label + " · today";
+  if (iso === shiftDay(todayISO(), -1)) return label + " · yesterday";
+  if (iso === shiftDay(todayISO(), 1)) return label + " · tomorrow";
+  return label;
+}
+
+let toastTimer = null;
+function toast(msg, isError) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.className = "show" + (isError ? " err" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ""; }, isError ? 4200 : 1900);
+}
+
+async function api(path, method, body) {
+  const opts = { method: method || "GET", headers: { "Content-Type": "application/json" } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  let res;
+  try {
+    res = await fetch(path, opts);
+  } catch (e) {
+    toast("Cannot reach the Daily Plan server — is it still running?", true);
+    throw e;
+  }
+  let data;
+  try { data = await res.json(); }
+  catch (e) { toast("Server sent an unreadable response.", true); throw e; }
+  if (!res.ok) { toast(data.error || ("Request failed (" + res.status + ")"), true); throw new Error(data.error); }
+  return data;
+}
+
+// ---------------------------------------------------------------- state
+let currentDay = todayISO();
+let snapshot = null;          // last server snapshot for currentDay
+let reflectionTimer = null;
+let reflectionDirty = false;
+
+// ---------------------------------------------------------------- rendering
+const NEXT_STATUS = { pending: "done", done: "unfinished", unfinished: "pending" };
+const STATUS_ICON = { pending: "", done: "✓", unfinished: "✕" };
+const STATUS_LABEL = { pending: "Pending", done: "Done", unfinished: "Unfinished" };
+
+function render(data) {
+  snapshot = data;
+  currentDay = data.day;
+
+  $("datePicker").value = currentDay;
+  $("dayLabel").textContent = prettyDay(currentDay);
+
+  renderGoals(data.entry.goals || []);
+  renderHero(data.stats);
+  renderDeadlines(data.deadlines || []);
+
+  // Don't clobber what the user is mid-way through typing.
+  if (!reflectionDirty) $("reflection").value = data.entry.reflection || "";
+
+  $("carryBtn").textContent = "Carry over unfinished from " +
+    (currentDay === todayISO() ? "yesterday" : shiftDay(currentDay, -1));
+}
+
+function renderGoals(goals) {
+  const list = $("goalList");
+  list.textContent = "";
+
+  const done = goals.filter(g => g.status === "done").length;
+  $("dayCount").textContent = done + " / " + goals.length;
+  $("dayBar").style.width = (goals.length ? (100 * done / goals.length) : 0) + "%";
+
+  if (!goals.length) {
+    const p = document.createElement("div");
+    p.className = "empty";
+    p.textContent = "No goals yet. What is the plan for this day?";
+    list.appendChild(p);
+    return;
+  }
+
+  goals.forEach((goal, index) => {
+    const li = document.createElement("li");
+    li.className = "goal " + goal.status;
+
+    const cycle = document.createElement("button");
+    cycle.className = "cycle";
+    cycle.textContent = STATUS_ICON[goal.status] || "";
+    cycle.title = STATUS_LABEL[goal.status] + " — click to change";
+    cycle.setAttribute("aria-label", goal.title + ": " + STATUS_LABEL[goal.status]);
+    cycle.onclick = () => setStatus(goal.id, NEXT_STATUS[goal.status] || "done");
+
+    const body = document.createElement("div");
+    body.className = "body";
+
+    const title = document.createElement("div");
+    title.className = "title";
+    title.textContent = goal.title;
+    const tag = document.createElement("span");
+    tag.className = "tag " + goal.status;
+    tag.textContent = STATUS_LABEL[goal.status];
+    title.appendChild(document.createTextNode(" "));
+    title.appendChild(tag);
+    body.appendChild(title);
+
+    if (goal.note) {
+      const note = document.createElement("div");
+      note.className = "note";
+      note.textContent = goal.note;
+      body.appendChild(note);
+    }
+    if (goal.carriedFrom) {
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = "carried from " + goal.carriedFrom;
+      body.appendChild(meta);
+    }
+    if (editing && editing.id === goal.id) {
+      body.appendChild(buildEditor(goal));
+    }
+
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    if (confirmingDelete === goal.id) {
+      li.classList.add("confirming");
+      const del = document.createElement("button");
+      del.className = "primary";
+      del.style.background = "var(--unfinished)";
+      del.style.borderColor = "var(--unfinished)";
+      del.textContent = "Delete?";
+      del.onclick = () => removeGoal(goal);
+      const keep = document.createElement("button");
+      keep.textContent = "Keep";
+      keep.onclick = () => { confirmingDelete = null; render(snapshot); };
+      acts.style.opacity = "1";
+      acts.appendChild(del);
+      acts.appendChild(keep);
+    } else {
+      acts.appendChild(iconBtn("↑", "Move up", () => move(goal.id, "up"), index === 0));
+      acts.appendChild(iconBtn("↓", "Move down", () => move(goal.id, "down"), index === goals.length - 1));
+      acts.appendChild(iconBtn("✎", "Edit title", () => openEditor(goal.id, "title")));
+      acts.appendChild(iconBtn(goal.note ? "✐" : "＋",
+        goal.note ? "Edit note" : "Add note", () => openEditor(goal.id, "note")));
+      acts.appendChild(iconBtn("🗑", "Delete goal", () => askDelete(goal)));
+    }
+
+    li.appendChild(cycle);
+    li.appendChild(body);
+    li.appendChild(acts);
+    list.appendChild(li);
+  });
+}
+
+function iconBtn(glyph, title, onClick, disabled) {
+  const b = document.createElement("button");
+  b.className = "ghost";
+  b.textContent = glyph;
+  b.title = title;
+  b.setAttribute("aria-label", title);
+  b.disabled = !!disabled;
+  b.onclick = onClick;
+  return b;
+}
+
+function renderHero(stats) {
+  const rank = stats.rank;
+  $("rankName").textContent = rank.name;
+  $("rankLevel").textContent = "Lv " + rank.level;
+  $("rankBar").style.width = Math.round(rank.progress * 100) + "%";
+  $("rankNext").textContent = rank.next === null
+    ? "Maximum rank reached."
+    : (rank.next - stats.total) + " more point" + (rank.next - stats.total === 1 ? "" : "s") +
+      " to " + rank.nextName;
+
+  $("sTotal").textContent = stats.total;
+  $("sToday").textContent = stats.today;
+  $("sStreak").textContent = stats.currentStreak;
+  $("sBest").textContent = stats.bestDay.score;
+  $("sBest").parentElement.title = stats.bestDay.date
+    ? "Best day: " + stats.bestDay.date + " (" + stats.bestDay.score + " points)" : "";
+}
+
+// ---------------------------------------------------------------- countdowns
+// Returns the pieces the card needs: the big number split into units, an
+// urgency class, and a short badge word.
+function countdownParts(due) {
+  const target = new Date(due).getTime();
+  if (isNaN(target)) return { parts: [["--", ""]], cls: "", badge: "", past: false };
+
+  let ms = target - Date.now();
+  const past = ms < 0;
+  ms = Math.abs(ms);
+
+  const secs  = Math.floor(ms / 1000) % 60;
+  const mins  = Math.floor(ms / 60000) % 60;
+  const hours = Math.floor(ms / 3600000) % 24;
+  const days  = Math.floor(ms / 86400000);
+
+  // Show the two most significant units, plus live seconds in the last day.
+  let parts;
+  if (days > 0)       parts = [[days, "d"], [hours, "h"], [mins, "m"]];
+  else if (hours > 0) parts = [[hours, "h"], [mins, "m"], [secs, "s"]];
+  else                parts = [[mins, "m"], [secs, "s"]];
+
+  let cls, badge;
+  if (past)            { cls = "passed"; badge = "overdue"; }
+  else if (days < 1)   { cls = "urgent"; badge = hours < 1 ? "minutes left" : "today"; }
+  else if (days < 4)   { cls = "soon";   badge = days === 1 ? "tomorrow" : days + " days"; }
+  else                 { cls = "calm";   badge = ""; }
+
+  return { parts, cls, badge, past };
+}
+
+function renderDeadlines(deadlines) {
+  const list = $("deadlineList");
+  list.textContent = "";
+  if (!deadlines.length) {
+    const p = document.createElement("div");
+    p.className = "empty";
+    p.textContent = "No deadlines set.";
+    list.appendChild(p);
+    return;
+  }
+  deadlines.forEach(dl => {
+    const li = document.createElement("li");
+    li.className = "dl";
+    li.dataset.due = dl.due;
+
+    const body = document.createElement("div");
+    body.className = "body";
+
+    // Number first — it is the thing worth seeing from across the room.
+    const cd = document.createElement("div");
+    cd.className = "cd";
+    body.appendChild(cd);
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = dl.title;
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    name.appendChild(badge);
+    body.appendChild(name);
+
+    const when = document.createElement("div");
+    when.className = "when";
+    when.textContent = new Date(dl.due).toLocaleString(undefined,
+      { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    body.appendChild(when);
+
+    if (dl.note) {
+      const note = document.createElement("div");
+      note.className = "small muted";
+      note.textContent = dl.note;
+      body.appendChild(note);
+    }
+
+    if (editingDeadline === dl.id) body.appendChild(buildDeadlineEditor(dl));
+
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    if (confirmingDeadline === dl.id) {
+      const del = document.createElement("button");
+      del.className = "primary";
+      del.style.background = "var(--unfinished)";
+      del.style.borderColor = "var(--unfinished)";
+      del.textContent = "Delete?";
+      del.onclick = () => removeDeadline(dl);
+      const keep = document.createElement("button");
+      keep.textContent = "Keep";
+      keep.onclick = () => { confirmingDeadline = null; render(snapshot); };
+      acts.style.opacity = "1";
+      acts.appendChild(del);
+      acts.appendChild(keep);
+    } else {
+      acts.appendChild(iconBtn("✎", "Edit deadline",
+        () => { editingDeadline = dl.id; render(snapshot); }));
+      acts.appendChild(iconBtn("🗑", "Delete deadline", () => {
+        confirmingDeadline = dl.id;
+        render(snapshot);
+        setTimeout(() => {
+          if (confirmingDeadline === dl.id) { confirmingDeadline = null; render(snapshot); }
+        }, 5000);
+      }));
+    }
+
+    li.appendChild(body);
+    li.appendChild(acts);
+    list.appendChild(li);
+  });
+  tickCountdowns();
+}
+
+function tickCountdowns() {
+  document.querySelectorAll("li.dl").forEach(li => {
+    const { parts, cls, badge, past } = countdownParts(li.dataset.due);
+
+    // Rewrite only the urgency classes so inline editor state survives.
+    li.classList.remove("calm", "soon", "urgent", "passed");
+    if (cls) li.classList.add(cls);
+
+    const cd = li.querySelector(".cd");
+    cd.textContent = "";
+    if (past) {
+      // Without this an overdue countdown reads exactly like a future one.
+      const sign = document.createElement("span");
+      sign.className = "sign";
+      sign.textContent = "−";
+      cd.appendChild(sign);
+    }
+    parts.forEach(([value, unit], i) => {
+      const span = document.createElement("span");
+      // The fastest-moving unit gets the pulse when things are urgent.
+      if (i === parts.length - 1) span.className = "live";
+      span.textContent = (i === 0 ? value : String(value).padStart(2, "0"));
+      cd.appendChild(span);
+      const u = document.createElement("span");
+      u.className = i === parts.length - 1 && unit === "s" ? "secs" : "u";
+      u.textContent = unit;
+      cd.appendChild(u);
+    });
+
+    const badgeEl = li.querySelector(".badge");
+    if (badgeEl) {
+      badgeEl.textContent = badge;
+      badgeEl.style.display = badge ? "" : "none";
+    }
+  });
+}
+setInterval(tickCountdowns, 1000);
+
+// ---------------------------------------------------------------- actions
+async function loadDay(day) {
+  reflectionDirty = false;
+  render(await api("/api/state?date=" + encodeURIComponent(day)));
+  if ($("historySection").open) loadHistory();
+}
+
+async function addGoals() {
+  const input = $("goalInput");
+  // Allow pasting several lines at once.
+  const titles = input.value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (!titles.length) { input.focus(); return; }
+  const data = await api("/api/goals", "POST", { date: currentDay, titles });
+  render(data);
+  if (data.skipped) {
+    toast(data.added
+      ? "Added " + data.added + ", skipped " + data.skipped + " already on this day."
+      : "Already on this day.");
+  }
+  input.value = "";
+  input.focus();
+}
+
+async function setStatus(id, status) {
+  const before = snapshot.stats.total;
+  const data = await api("/api/goal", "PATCH", { date: currentDay, id, status });
+  render(data);
+  if (data.stats.total > before) {
+    toast("+1 point — " + data.stats.total + " total");
+  }
+}
+
+async function move(id, direction) {
+  render(await api("/api/goal/move", "POST", { date: currentDay, id, direction }));
+}
+
+// Which goal is being edited inline, and how. Kept in module state so a
+// re-render (e.g. the countdown tick) doesn't tear the editor down.
+let editing = null;   // {id, field: "title"|"note"}
+
+function openEditor(id, field) {
+  editing = { id: id, field: field };
+  render(snapshot);
+}
+
+function closeEditor() {
+  editing = null;
+  render(snapshot);
+}
+
+function buildEditor(goal) {
+  const wrap = document.createElement("div");
+  wrap.className = "editor";
+  const isNote = editing.field === "note";
+
+  const field = document.createElement(isNote ? "textarea" : "input");
+  if (!isNote) field.type = "text";
+  field.value = isNote ? (goal.note || "") : goal.title;
+  field.placeholder = isNote ? "Note for this goal" : "Goal title";
+  wrap.appendChild(field);
+
+  const save = async () => {
+    const value = field.value;
+    if (!isNote && !value.trim()) { toast("Title cannot be empty.", true); field.focus(); return; }
+    const body = { date: currentDay, id: goal.id };
+    body[isNote ? "note" : "title"] = value;
+    editing = null;
+    render(await api("/api/goal", "PATCH", body));
+  };
+
+  const row = document.createElement("div");
+  row.className = "row";
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "primary";
+  saveBtn.textContent = "Save";
+  saveBtn.onclick = save;
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.onclick = closeEditor;
+  const hint = document.createElement("span");
+  hint.className = "hint";
+  hint.textContent = isNote ? "⌘↵ to save · Esc to cancel" : "↵ to save · Esc to cancel";
+  row.appendChild(saveBtn);
+  row.appendChild(cancelBtn);
+  row.appendChild(hint);
+  wrap.appendChild(row);
+
+  field.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.preventDefault(); closeEditor(); }
+    else if (e.key === "Enter" && (!isNote || e.metaKey || e.ctrlKey)) { e.preventDefault(); save(); }
+  });
+
+  // Focus after this render pass lands in the DOM.
+  setTimeout(() => { field.focus(); field.select && !isNote && field.select(); }, 0);
+  return wrap;
+}
+
+// Delete asks for confirmation inline instead of via a blocking confirm().
+let confirmingDelete = null;
+
+function askDelete(goal) {
+  confirmingDelete = goal.id;
+  render(snapshot);
+  setTimeout(() => {
+    if (confirmingDelete === goal.id) { confirmingDelete = null; render(snapshot); }
+  }, 5000);
+}
+
+async function removeGoal(goal) {
+  confirmingDelete = null;
+  render(await api("/api/goal", "DELETE", { date: currentDay, id: goal.id }));
+}
+
+async function carryOver() {
+  const data = await api("/api/goal/carry", "POST",
+    { date: currentDay, from: shiftDay(currentDay, -1) });
+  render(data);
+  toast(data.carried ? "Carried over " + data.carried + " goal(s)."
+                     : "Nothing unfinished to carry over.");
+}
+
+async function addDeadline() {
+  const title = $("dlTitle").value.trim();
+  const due = $("dlDue").value;
+  if (!title) { toast("Give the deadline a name.", true); $("dlTitle").focus(); return; }
+  if (!due)   { toast("Pick a due date.", true); $("dlDue").focus(); return; }
+  render(await api("/api/deadlines", "POST", { date: currentDay, title, due }));
+  $("dlTitle").value = "";
+  $("dlDue").value = "";
+  toast("Deadline added.");
+}
+
+let editingDeadline = null;
+let confirmingDeadline = null;
+
+function buildDeadlineEditor(dl) {
+  const wrap = document.createElement("div");
+  wrap.className = "editor";
+
+  const name = document.createElement("input");
+  name.type = "text";
+  name.value = dl.title;
+  name.placeholder = "Deadline name";
+  wrap.appendChild(name);
+
+  const due = document.createElement("input");
+  due.type = "datetime-local";
+  due.value = dl.due;
+  due.style.marginTop = ".35rem";
+  wrap.appendChild(due);
+
+  const save = async () => {
+    if (!name.value.trim()) { toast("Give the deadline a name.", true); name.focus(); return; }
+    if (!due.value) { toast("Pick a due date.", true); due.focus(); return; }
+    editingDeadline = null;
+    render(await api("/api/deadline", "PATCH",
+      { date: currentDay, id: dl.id, title: name.value, due: due.value }));
+  };
+
+  const row = document.createElement("div");
+  row.className = "row";
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "primary";
+  saveBtn.textContent = "Save";
+  saveBtn.onclick = save;
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.onclick = () => { editingDeadline = null; render(snapshot); };
+  row.appendChild(saveBtn);
+  row.appendChild(cancelBtn);
+  wrap.appendChild(row);
+
+  [name, due].forEach(el => el.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.preventDefault(); editingDeadline = null; render(snapshot); }
+    else if (e.key === "Enter") { e.preventDefault(); save(); }
+  }));
+
+  setTimeout(() => name.focus(), 0);
+  return wrap;
+}
+
+async function removeDeadline(dl) {
+  confirmingDeadline = null;
+  render(await api("/api/deadline", "DELETE", { date: currentDay, id: dl.id }));
+}
+
+async function saveReflection() {
+  const text = $("reflection").value;
+  const data = await api("/api/reflection", "PUT", { date: currentDay, text });
+  reflectionDirty = false;
+  snapshot = data;
+  $("reflectionStatus").textContent = "Saved.";
+  setTimeout(() => { $("reflectionStatus").textContent = "Saves automatically."; }, 1600);
+}
+
+async function loadHistory() {
+  const data = await api("/api/history");
+  const body = $("historyBody");
+  body.textContent = "";
+  if (!data.days.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 4;
+    td.className = "muted";
+    td.textContent = "No history yet.";
+    tr.appendChild(td);
+    body.appendChild(tr);
+    return;
+  }
+  data.days.forEach(d => {
+    const tr = document.createElement("tr");
+    tr.className = "clickable";
+    tr.onclick = () => loadDay(d.date);
+    const cells = [
+      [d.date, ""],
+      [String(d.score), "num"],
+      [String(d.total), "num"],
+      [Math.round(100 * d.score / d.total) + "%", "num"],
+    ];
+    cells.forEach(([text, cls]) => {
+      const td = document.createElement("td");
+      td.textContent = text;
+      if (cls) td.className = cls;
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+}
+
+// ---------------------------------------------------------------- wiring
+$("addGoal").onclick = addGoals;
+$("goalInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); addGoals(); }
+});
+
+$("addDeadline").onclick = addDeadline;
+$("dlTitle").addEventListener("keydown", (e) => { if (e.key === "Enter") addDeadline(); });
+$("dlDue").addEventListener("keydown", (e) => { if (e.key === "Enter") addDeadline(); });
+
+$("carryBtn").onclick = carryOver;
+
+$("prevDay").onclick = () => loadDay(shiftDay(currentDay, -1));
+$("nextDay").onclick = () => loadDay(shiftDay(currentDay, 1));
+$("todayBtn").onclick = () => loadDay(todayISO());
+$("datePicker").onchange = (e) => { if (e.target.value) loadDay(e.target.value); };
+
+$("reflection").addEventListener("input", () => {
+  reflectionDirty = true;
+  $("reflectionStatus").textContent = "Unsaved…";
+  clearTimeout(reflectionTimer);
+  reflectionTimer = setTimeout(saveReflection, 800);
+});
+$("reflection").addEventListener("blur", () => {
+  if (reflectionDirty) { clearTimeout(reflectionTimer); saveReflection(); }
+});
+
+$("historySection").addEventListener("toggle", () => {
+  if ($("historySection").open) loadHistory();
+});
+
+window.addEventListener("focus", tickCountdowns);
+
+loadDay(currentDay).then(() => $("goalInput").focus());
+</script>
+</body>
+</html>
